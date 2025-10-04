@@ -6,7 +6,8 @@ window.addEventListener('load', () => {
   // The ajv2020.bundle.js exposes window.ajv2020
   if (window.ajv2020 && window.ajv2020.default) {
     ajv = new window.ajv2020.default({
-        validateSchema: false
+        validateSchema: false,
+        allErrors: true  // Report all validation errors, not just the first one
     });
     console.log('Ajv loaded successfully');
 
@@ -307,56 +308,22 @@ copyJsonBtn.addEventListener('click', () => {
 // Load example data
 exampleBtn.addEventListener('click', () => {
   const exampleSchema = {
-      "$schema": "http://json-schema.org/2020-12/schema#",
-      "type": "object",
-      "properties": {
-          "name": {
-              "type": "string",
-              "minLength": 1
-          },
-          "age": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 120
-          },
-          "email": {
-              "type": "string"
-          },
-          "address": {
-              "type": "object",
-              "properties": {
-                  "street": {
-                      "type": "string"
-                  },
-                  "city": {
-                      "type": "string"
-                  },
-                  "zipCode": {
-                      "type": "string",
-                      "pattern": "^[0-9]{5}$"
-                  }
-              },
-              "required": [
-                  "street",
-                  "city"
-              ]
-          }
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
       },
-      "required": [
-          "name",
-          "email"
-      ]
+      "age": {
+        "type": "number",
+        "minimum": 0
+      }
+    },
+    "required": ["name"]
   };
 
   const exampleJson = {
-    "name": "John Doe",
-    "age": 30,
-    "email": "john.doe@example.com",
-    "address": {
-      "street": "123 Main St",
-      "city": "Springfield",
-      "zipCode": "12345"
-    }
+    "name": "Alice",
+    "age": 25
   };
 
   schemaEditor.value = JSON.stringify(exampleSchema, null, 2);
