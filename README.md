@@ -63,28 +63,14 @@ The demo at [https://json-validator.codemine.be](https://json-validator.codemine
 #### Prerequisites
 
 1. Create a DynamoDB table:
-   - Table name: Choose a name (e.g., `json-validator-validations`)
+   - Table name: Choose a name
    - Partition key: `PK` (String)
    - **Enable TTL**: Set TTL attribute name to `ttl`
-   - Billing mode: On-demand recommended
 
 2. Configure Lambda environment variables:
    ```
    DB_PROVIDER=dynamodb
-   DYNAMODB_TABLE_NAME=json-validator-validations
-   AWS_REGION=us-east-1
-   ```
-
-3. Ensure Lambda execution role has DynamoDB permissions:
-   ```json
-   {
-     "Effect": "Allow",
-     "Action": [
-       "dynamodb:PutItem",
-       "dynamodb:GetItem"
-     ],
-     "Resource": "arn:aws:dynamodb:REGION:ACCOUNT:table/TABLE_NAME"
-   }
+   DYNAMODB_TABLE_NAME=<table-name>
    ```
 
 #### Deploy
