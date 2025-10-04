@@ -1,0 +1,16 @@
+node_modules/
+dist/
+*.log
+.env
+*.sqlite
+*.db
+*.zip
+data/
+data/*.db
+
+# IDE
+.vscode
+.idea
+
+# Claude Code
+.claude/

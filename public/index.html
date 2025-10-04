@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JSON Schema Validator</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>JSON Schema Validator</h1>
+      <div class="header-actions">
+        <button id="exampleBtn" class="btn btn-secondary">Load Example</button>
+        <button id="saveBtn" class="btn btn-primary">Save & Share</button>
+        <div id="shareLink" class="share-link" style="display: none;">
+          <input type="text" id="shareLinkInput" readonly>
+          <button id="copyBtn" class="btn btn-secondary">Copy</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="editor-container">
+      <div class="editor-panel">
+        <div class="panel-header">
+          <h2>JSON Schema</h2>
+          <div class="panel-actions">
+            <button id="copySchemaBtn" class="btn-prettify" title="Copy to clipboard">Copy</button>
+            <button id="prettifySchemaBtn" class="btn-prettify" title="Format JSON">Prettify</button>
+          </div>
+        </div>
+        <div class="editor-wrapper">
+          <div id="schemaLineNumbers" class="line-numbers"></div>
+          <textarea id="schemaEditor" placeholder="Enter your JSON Schema here..."></textarea>
+        </div>
+      </div>
+
+      <div class="editor-panel">
+        <div class="panel-header">
+          <h2>JSON Input</h2>
+          <div class="panel-actions">
+            <button id="copyJsonBtn" class="btn-prettify" title="Copy to clipboard">Copy</button>
+            <button id="prettifyJsonBtn" class="btn-prettify" title="Format JSON">Prettify</button>
+          </div>
+        </div>
+        <div class="editor-wrapper">
+          <div id="jsonLineNumbers" class="line-numbers"></div>
+          <textarea id="jsonEditor" placeholder="Enter your JSON to validate here..."></textarea>
+        </div>
+      </div>
+    </main>
+
+    <div class="validation-results">
+      <div class="panel-header">
+        <h2>Validation Results</h2>
+      </div>
+      <div id="results" class="results-content">
+        <p class="info">Enter both JSON Schema and JSON Input to see validation results.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Ajv from CDN -->
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/ajv/8.17.1/ajv7.min.js"
+    integrity="sha512-OIkF2zyWS+sUanhT2i75RexNDQ2EKHayyeOxBx4Z4ct0D+dlPzZPhHTi7xZ5eU7aznNLMX7pCZyZVSi25+EGMQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script> -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ajv/8.17.1/ajv2020.bundle.js"
+    integrity="sha512-sHey9yWVIu+Vv88EJmYFuV/L+6YTrw4ucDBFTdsQNuROSvUFXQWOFCnEskKWHs1Zfrg7StVJoOMbIP7d26iosw=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="/app.js"></script>
+</body>
+
+</html>

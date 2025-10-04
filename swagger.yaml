@@ -1,0 +1,156 @@
+openapi: 3.0.0
+info:
+  title: JSON Schema Validator API
+  description: API for validating JSON against JSON Schema and sharing validations
+  version: 1.0.0
+  license:
+    name: MIT
+servers:
+  - url: /
+    description: Current server
+
+paths:
+  /:
+    get:
+      summary: Get the validator UI
+      description: Returns the main HTML page with the JSON validator interface
+      responses:
+        '200':
+          description: HTML page
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /{id}:
+    get:
+      summary: Get a saved validation
+      description: Returns the validator UI pre-populated with a saved validation
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Unique identifier for the saved validation
+      responses:
+        '200':
+          description: HTML page with injected validation data
+          content:
+            text/html:
+              schema:
+                type: string
+        '404':
+          description: Validation not found
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /api/save:
+    post:
+      summary: Save a validation
+      description: |
+        Saves a JSON schema and JSON input pair, returns a unique ID for sharing.
+
+        Rate Limit: 100 requests per 15 minutes per IP.
+        Maximum body size: 350KB.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - schema
+                - json
+              properties:
+                schema:
+                  description: JSON Schema as an object
+                  oneOf:
+                    - type: object
+                    - type: array
+                    - type: string
+                    - type: number
+                    - type: boolean
+                  example: {"type": "object", "properties": {"name": {"type": "string"}}}
+                json:
+                  description: JSON input to validate as an object
+                  oneOf:
+                    - type: object
+                    - type: array
+                    - type: string
+                    - type: number
+                    - type: boolean
+                  example: {"name": "John Doe"}
+      responses:
+        '200':
+          description: Validation saved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Unique identifier for the saved validation
+                    example: "abc123XYZ"
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message
+                    example: "Validation failed"
+                  details:
+                    type: string
+                    description: Detailed validation error message
+        '413':
+          description: Request body too large (exceeds 350KB)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message
+        '429':
+          description: Too many requests
+          content:
+            text/html:
+              schema:
+                type: string
+                example: "Too many validation save requests"
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message
+
+components:
+  schemas:
+    Validation:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier
+        schema:
+          type: string
+          description: JSON Schema as string
+        json:
+          type: string
+          description: JSON input as string
+        created_at:
+          type: integer
+          description: Unix timestamp of creation
