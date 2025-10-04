@@ -54,7 +54,6 @@ paths:
         Saves a JSON schema and JSON input pair, returns a unique ID for sharing.
 
         Rate Limit: 100 requests per 15 minutes per IP.
-        Maximum body size: 350KB.
       requestBody:
         required: true
         content:
@@ -110,7 +109,7 @@ paths:
                     type: string
                     description: Detailed validation error message
         '413':
-          description: Request body too large (exceeds 350KB)
+          description: Request body too large
           content:
             application/json:
               schema:

@@ -2,6 +2,8 @@
 
 A web-based JSON Schema Validator with a Node.js/Express backend that supports both local deployment and AWS Lambda. Validate JSON data against JSON Schema definitions, save validations, and share them via unique URLs.
 
+**Goal:** This project serves as a debug tool for verifying JSON schema mismatches. By storing validation results via the API, developers can easily share and troubleshoot schema validation issues with their team.
+
 This app was vibe-coded using [Claude Code](https://claude.com/claude-code).
 
 ## Demo
@@ -10,11 +12,8 @@ Try it out at: [https://json-validator.codemine.be](https://json-validator.codem
 
 ## Features
 
-- Real-time JSON validation against JSON Schema (Draft 2020-12)
+- Real-time JSON validation against JSON Schema
 - Save and share validations via unique URLs
-- Prettify/format JSON with one click
-- Load example schema and data
-- Line numbers for both editors
 - 7-day TTL for saved validations
 - API documentation with Swagger UI (available at `/api-docs`)
 
@@ -46,6 +45,8 @@ Try it out at: [https://json-validator.codemine.be](https://json-validator.codem
 ## Deployment
 
 ### AWS Lambda
+
+The demo at [https://json-validator.codemine.be](https://json-validator.codemine.be) is deployed using AWS Lambda. This repository includes both build and deploy scripts to streamline the deployment process.
 
 1. Build and package the application:
    ```bash

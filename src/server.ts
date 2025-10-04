@@ -14,7 +14,7 @@ const rootPath = process.env.ROOT_PATH || "."
 const swaggerDocument = YAML.load(path.join(__dirname, rootPath, 'swagger.yaml'));
 
 // Middleware
-app.use(bodyParser.json({ limit: '350kb' }));
+app.use(bodyParser.json({ limit: '300kb' }));
 app.use(express.static(path.join(__dirname, rootPath, 'public')));
 
 // Rate limiter for /api/save endpoint
@@ -29,10 +29,10 @@ const saveRateLimiter = rateLimit({
 
 // Zod validation schema for /api/save
 const saveValidationSchema = z.object({
-  schema: z.record(z.string(), z.any()).refine((val) => val !== undefined && val !== null, {
+  schema: z.any().refine((val) => val !== undefined && val !== null, {
     message: 'Schema is required and cannot be null',
   }),
-  json: z.record(z.string(), z.any()).refine((val) => val !== undefined && val !== null, {
+  json: z.any().refine((val) => val !== undefined && val !== null, {
     message: 'JSON is required and cannot be null',
   }),
 });
