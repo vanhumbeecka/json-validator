@@ -12,8 +12,9 @@ import logger from './logger';
 export const app = express();
 const rootPath = process.env.ROOT_PATH || "."
 
-// Trust proxy for rate limiting and IP detection when behind load balancers/proxies
-app.set('trust proxy', true);
+// Trust proxy: use number of hops for AWS Lambda/API Gateway
+// API Gateway adds X-Forwarded-For header (1 hop)
+app.set('trust proxy', 1);
 
 // Load Swagger documentation
 const swaggerDocument = YAML.load(path.join(__dirname, rootPath, 'swagger.yaml'));
