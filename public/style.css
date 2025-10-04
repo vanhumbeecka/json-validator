@@ -284,9 +284,15 @@ textarea {
 }
 
 .footer-icon {
-  width: 14px;
-  height: 14px;
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px;
+  min-height: 14px;
+  max-width: 14px;
+  max-height: 14px;
   vertical-align: middle;
+  display: inline-block;
+  object-fit: contain;
 }
 
 .footer span {

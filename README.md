@@ -14,8 +14,30 @@ Try it out at: [https://json-validator.codemine.be](https://json-validator.codem
 
 - Real-time JSON validation against JSON Schema
 - Save and share validations via unique URLs
-- 7-day TTL for saved validations
+- 1-day TTL for saved validations (production)
 - API documentation with Swagger UI (available at `/api-docs`)
+
+## Programmatic Usage
+
+This tool can be used programmatically to store debug information from your application. Use the `POST /api/save` endpoint to save JSON schema validation failures directly from your code, then share the generated URL with your team for troubleshooting.
+
+**Example:**
+
+```javascript
+const response = await fetch('<host>/api/save', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    schema: { type: 'object', properties: { name: { type: 'string' } } },
+    json: { name: 123 }
+  })
+});
+
+const { id } = await response.json();
+console.log(`View validation: <host>/${id}`);
+```
+
+See `/api-docs` for full API documentation.
 
 ## Local Setup
 
