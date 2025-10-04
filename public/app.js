@@ -157,7 +157,7 @@ function validateJson() {
 }
 
 // Add event listeners for real-time validation
-const debouncedValidation = debounce(validateJson, 500);
+const debouncedValidation = debounce(validateJson, 200);
 schemaEditor.addEventListener('input', debouncedValidation);
 jsonEditor.addEventListener('input', debouncedValidation);
 

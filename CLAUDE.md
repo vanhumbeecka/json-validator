@@ -49,7 +49,7 @@ The `/:id` route reads `public/index.html`, injects data as a `<script>` block, 
 
 ### Client-Side Architecture
 - **Validation**: Client-side only, using Ajv library (loaded from CDN)
-- **Real-time**: Debounced validation on textarea input (500ms)
+- **Real-time**: Debounced validation on textarea input (200ms)
 - **Data Loading**: Frontend checks for `window.INITIAL_DATA` on page load to populate editors
 
 ## Development Commands
@@ -61,46 +61,77 @@ npm install
 # Run local development server (http://localhost:3000)
 npm run dev
 
-# Build for production
+# Build for production (compiles TypeScript, copies files, installs prod deps)
 npm run build
 
 # Create AWS Lambda deployment package
 npm run package  # Creates deployment.zip
+
+# Deploy to AWS Lambda (requires AWS CLI configured)
+npm run deploy
+
+# Clean build artifacts
+npm run clean  # Removes dist/ and deployment.zip
 ```
 
 ## Build Process
 
 The build pipeline prepares files for AWS Lambda deployment:
-1. `clean` - Remove dist/ directory
+1. `clean` - Remove dist/ directory and deployment.zip
 2. `compile` - TypeScript compilation (src/ → dist/)
-3. `copy-files` - Copy public/ to dist/public/ and create dist/data/ directory
-4. `copy-deps` - Install production dependencies in dist/
+3. `copy-files` - Copy public/ to dist/public/, swagger.yaml to dist/, create dist/data/
+4. `copy-deps` - Copy package.json to dist/ and install production dependencies only
 5. `package` - Create deployment.zip from dist/ contents
+6. `deploy` - Upload deployment.zip to AWS Lambda function named `json-validator`
 
 Lambda handler: `lambda.handler` (points to `dist/lambda.js`)
 
+## Environment Configuration
+
+The application uses environment variables for configuration. Use a `.env` file for local development (loaded via `dotenv`).
+
+**Required for all environments:**
+- `PORT` - Server port (default: 3000)
+- `ROOT_PATH` - Path to root directory relative to dist/ (default: `.`, set to `..` for dev)
+- `NODE_ENV` - `development` or `production` (affects logging format)
+
+**Logging:**
+- `LOG_LEVEL` - `error`, `warn`, `info`, or `debug` (default: `info`)
+
+**Database selection:**
+- `DB_PROVIDER` - `sqlite` (default) or `dynamodb`
+
+**SQLite-specific (when `DB_PROVIDER=sqlite`):**
+- `DB_PATH` - Path to database file (default: `data/validations.db`)
+
+**DynamoDB-specific (when `DB_PROVIDER=dynamodb`):**
+- `DYNAMODB_TABLE_NAME` - DynamoDB table name (required)
+- `AWS_REGION` - AWS region (optional, uses SDK default)
+
+See `.env.example` for a complete reference.
+
 ## Key Implementation Details
 
-### Database Configuration
+### API Security & Validation
+- **Rate Limiting**: 100 requests per 15 minutes per IP for `/api/save` (via `express-rate-limit`)
+- **Request Size Limit**: 300KB maximum body size (via `body-parser`)
+- **Input Validation**: Zod schema validation for `/api/save` endpoint
+- **Error Handling**: Structured error responses with proper HTTP status codes
 
-**Environment Variables:**
-- `DB_PROVIDER`: `sqlite` (default) or `dynamodb`
-- `DB_PATH`: SQLite database path (default: `data/validations.db` relative to dist/)
-- `DYNAMODB_TABLE_NAME`: DynamoDB table name (required when `DB_PROVIDER=dynamodb`)
-- `AWS_REGION`: AWS region for DynamoDB (optional, uses SDK default if not set)
-
-**Local Development:**
-- Uses SQLite provider by default
-- Database at `data/validations.db` (relative to dist/)
-- No TTL or cleanup
-
-**AWS Lambda Production:**
-- Set `DB_PROVIDER=dynamodb`
-- DynamoDB table with `PK` partition key and `ttl` attribute enabled
-- 1-day automatic expiration
+### Logging
+- **Winston** logger configured in `src/logger.ts`
+- **Development**: Human-readable colorized output with timestamps
+- **Production**: JSON-structured logging for log aggregation
+- All logs output to STDOUT only
+- Logs include validation saves with ID and payload sizes
 
 ### Static File Detection
 The `/:id` route skips URLs containing `.` to avoid matching static files (e.g., `/style.css`)
 
 ### ID Generation
 Uses `randomBytes(12).toString('base64url')` for URL-safe, high-entropy IDs (16 characters)
+
+### Client-Side Validation
+- Ajv configured with `allErrors: true` to report all validation errors, not just the first
+- Ajv 2020-12 draft support loaded from CDN
+- Real-time validation with 200ms debounce
