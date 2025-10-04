@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import path from 'path';
@@ -6,6 +7,7 @@ import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
+import logger from './logger';
 
 export const app = express();
 const rootPath = process.env.ROOT_PATH || "."
@@ -41,7 +43,7 @@ const saveValidationSchema = z.object({
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // POST /api/save - Save a validation and return ID
-app.post('/api/save', saveRateLimiter, (req: Request, res: Response) => {
+app.post('/api/save', saveRateLimiter, async (req: Request, res: Response) => {
   try {
     // Validate request body with Zod
     const validation = saveValidationSchema.safeParse(req.body);
@@ -59,16 +61,19 @@ app.post('/api/save', saveRateLimiter, (req: Request, res: Response) => {
     const schemaString = JSON.stringify(schema);
     const jsonString = JSON.stringify(json);
 
-    const id = saveValidation(schemaString, jsonString);
+    const id = await saveValidation(schemaString, jsonString);
+
+    logger.info('Validation saved', { id, schemaSize: schemaString.length, jsonSize: jsonString.length });
+
     res.json({ id });
   } catch (error) {
-    console.error('Error saving validation:', error);
+    logger.error('Error saving validation', { error });
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 // GET /:id - Serve HTML with embedded validation data
-app.get('/:id', (req: Request, res: Response) => {
+app.get('/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
 
   // Skip if it's a static file request
@@ -77,7 +82,7 @@ app.get('/:id', (req: Request, res: Response) => {
   }
 
   try {
-    const validation = getValidation(id);
+    const validation = await getValidation(id);
 
     if (!validation) {
       return res.status(404).send('Validation not found or expired');
@@ -103,7 +108,7 @@ app.get('/:id', (req: Request, res: Response) => {
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
   } catch (error) {
-    console.error('Error loading validation:', error);
+    logger.error('Error loading validation', { error });
     res.status(500).send('Internal server error');
   }
 });
@@ -122,6 +127,6 @@ app.use((err: Error, _req: Request, res: Response, _next: any) => {
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    logger.info(`Server running on http://localhost:${PORT}`);
   });
 }

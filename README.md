@@ -44,9 +44,50 @@ Try it out at: [https://json-validator.codemine.be](https://json-validator.codem
 
 ## Deployment
 
+### Database Configuration
+
+The application supports two database providers:
+- **SQLite** (default): Used for local development, no cleanup/TTL
+- **DynamoDB**: Used for production AWS Lambda deployment with 1-day TTL
+
+#### Environment Variables
+
+- `DB_PROVIDER` - Database provider: `sqlite` (default) or `dynamodb`
+- `DYNAMODB_TABLE_NAME` - DynamoDB table name (required when using DynamoDB)
+- `AWS_REGION` - AWS region for DynamoDB (optional, defaults to SDK default)
+
 ### AWS Lambda
 
-The demo at [https://json-validator.codemine.be](https://json-validator.codemine.be) is deployed using AWS Lambda. This repository includes both build and deploy scripts to streamline the deployment process.
+The demo at [https://json-validator.codemine.be](https://json-validator.codemine.be) is deployed using AWS Lambda with DynamoDB. This repository includes both build and deploy scripts to streamline the deployment process.
+
+#### Prerequisites
+
+1. Create a DynamoDB table:
+   - Table name: Choose a name (e.g., `json-validator-validations`)
+   - Partition key: `PK` (String)
+   - **Enable TTL**: Set TTL attribute name to `ttl`
+   - Billing mode: On-demand recommended
+
+2. Configure Lambda environment variables:
+   ```
+   DB_PROVIDER=dynamodb
+   DYNAMODB_TABLE_NAME=json-validator-validations
+   AWS_REGION=us-east-1
+   ```
+
+3. Ensure Lambda execution role has DynamoDB permissions:
+   ```json
+   {
+     "Effect": "Allow",
+     "Action": [
+       "dynamodb:PutItem",
+       "dynamodb:GetItem"
+     ],
+     "Resource": "arn:aws:dynamodb:REGION:ACCOUNT:table/TABLE_NAME"
+   }
+   ```
+
+#### Deploy
 
 1. Build and package the application:
    ```bash

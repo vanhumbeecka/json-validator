@@ -16,13 +16,28 @@ The application supports two deployment targets:
 Both targets share the same Express app instance exported from `server.ts`.
 
 ### Data Layer
-SQLite database using `sql.js` (pure JavaScript, no native compilation):
+Abstracted database layer with two providers (switchable via `DB_PROVIDER` env var):
+
+**SQLite Provider** (default, for local dev):
+- Uses `sql.js` (pure JavaScript, no native compilation)
 - Records stored in `validations` table (id, schema, json, created_at)
-- **7-day TTL**: Old records deleted on-demand during each API request (piggybacking on normal traffic)
-- Cleanup function `cleanupOldRecords()` called at start of both `saveValidation()` and `getValidation()`
+- **No TTL/cleanup**: Local dev only, unlimited storage
 - Database persisted to disk after each write operation via `saveDB()`
 - Database path configurable via `DB_PATH` environment variable
-- Database initialized asynchronously on module load
+- Located in `src/database/sqlite.ts`
+
+**DynamoDB Provider** (for AWS Lambda production):
+- Records stored with partition key `PK` (validation ID)
+- Attributes: `PK`, `schema`, `json`, `created_at`, `ttl`
+- **1-day TTL**: Automatic expiration using DynamoDB's native TTL feature
+- No manual cleanup needed
+- Configuration via `DYNAMODB_TABLE_NAME` and `AWS_REGION` env vars
+- Located in `src/database/dynamodb.ts`
+
+**Database Interface** (`src/database/index.ts`):
+- Exports `saveValidation()` and `getValidation()` functions
+- Both functions are async (return Promises)
+- Provider selection based on `DB_PROVIDER` env var
 
 ### Routing Strategy
 Three routes with specific behaviors:
@@ -66,12 +81,26 @@ Lambda handler: `lambda.handler` (points to `dist/lambda.js`)
 
 ## Key Implementation Details
 
-### Database Path Handling
-- Local dev: `data/validations.db` (relative to dist/)
-- Lambda: Set `DB_PATH` env var to `/tmp/validations.db` (Lambda's writable directory)
+### Database Configuration
+
+**Environment Variables:**
+- `DB_PROVIDER`: `sqlite` (default) or `dynamodb`
+- `DB_PATH`: SQLite database path (default: `data/validations.db` relative to dist/)
+- `DYNAMODB_TABLE_NAME`: DynamoDB table name (required when `DB_PROVIDER=dynamodb`)
+- `AWS_REGION`: AWS region for DynamoDB (optional, uses SDK default if not set)
+
+**Local Development:**
+- Uses SQLite provider by default
+- Database at `data/validations.db` (relative to dist/)
+- No TTL or cleanup
+
+**AWS Lambda Production:**
+- Set `DB_PROVIDER=dynamodb`
+- DynamoDB table with `PK` partition key and `ttl` attribute enabled
+- 1-day automatic expiration
 
 ### Static File Detection
 The `/:id` route skips URLs containing `.` to avoid matching static files (e.g., `/style.css`)
 
 ### ID Generation
-Uses `randomBytes(6).toString('base64url')` for URL-safe, collision-resistant IDs
+Uses `randomBytes(12).toString('base64url')` for URL-safe, high-entropy IDs (16 characters)

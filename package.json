@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "ROOT_PATH='..' ts-node src/server.ts",
     "build": "npm run clean && npm run compile && npm run copy-files && npm run copy-deps",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist && rm -f deployment.zip",
     "compile": "tsc",
     "copy-files": "cp -r public dist/ && cp swagger.yaml dist/ && mkdir -p dist/data",
     "copy-deps": "cp package.json dist/ && cd dist && npm install --omit=dev",
@@ -23,11 +23,15 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.902.0",
+    "@aws-sdk/lib-dynamodb": "^3.902.0",
+    "dotenv": "^17.2.3",
     "express": "^4.18.2",
     "express-rate-limit": "^8.1.0",
     "serverless-http": "^3.2.0",
     "sql.js": "^1.10.3",
     "swagger-ui-express": "^5.0.1",
+    "winston": "^3.18.3",
     "yamljs": "^0.3.0",
     "zod": "^4.1.11"
   },
