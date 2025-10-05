@@ -2,12 +2,15 @@ import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import path from 'path';
+import crypto from 'crypto';
+import serialize from 'serialize-javascript';
 import { saveValidation, getValidation } from './database';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
 import logger from './logger';
+import helmet from 'helmet';
 
 export const app = express();
 const rootPath = process.env.ROOT_PATH || "."
@@ -18,6 +21,36 @@ app.set('trust proxy', 1);
 
 // Load Swagger documentation
 const swaggerDocument = YAML.load(path.join(__dirname, rootPath, 'swagger.yaml'));
+
+// Security middleware - Helmet with strict CSP
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "https://cdnjs.cloudflare.com",
+        "'unsafe-eval'", // Required for Ajv's dynamic code generation (uses new Function())
+        // Note: Nonces will be added per-request for injected scripts
+      ],
+      styleSrc: ["'self'", "'unsafe-inline'"], // Required for inline styles in app.js
+      imgSrc: ["'self'", "data:"],
+      fontSrc: ["'self'"],
+      connectSrc: ["'self'"],
+      frameAncestors: ["'none'"], // Prevent iframe embedding (clickjacking protection)
+    },
+  },
+  frameguard: { action: 'deny' }, // X-Frame-Options: DENY
+  xContentTypeOptions: true, // X-Content-Type-Options: nosniff
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  permittedCrossDomainPolicies: { permittedPolicies: 'none' },
+  // HSTS for production (only when served over HTTPS)
+  strictTransportSecurity: process.env.NODE_ENV === 'production' ? {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true,
+  } : false,
+}));
 
 // Middleware
 app.use(bodyParser.json({ limit: '300kb' }));
@@ -92,6 +125,9 @@ app.get('/:id', async (req: Request, res: Response) => {
       return res.status(404).send('Validation not found or expired');
     }
 
+    // Generate cryptographic nonce for CSP
+    const nonce = crypto.randomBytes(16).toString('base64');
+
     // Read the base HTML file and inject data
     const fs = require('fs');
     const htmlPath = path.join(__dirname, rootPath, 'public/index.html');
@@ -99,16 +135,25 @@ app.get('/:id', async (req: Request, res: Response) => {
 
     // Inject the validation data as a script tag before </body>
     // Parse stored strings back to JSON objects
+    // Use serialize-javascript library for safe XSS-free serialization
+    // This handles all edge cases: </script>, line terminators, HTML entities, etc.
+    const safeData = serialize({
+      schema: JSON.parse(validation.schema),
+      json: JSON.parse(validation.json)
+    }, { isJSON: true }); // isJSON: true ensures JSON-compatible output with XSS protection
+
     const dataScript = `
-    <script>
-      window.INITIAL_DATA = ${JSON.stringify({
-        schema: JSON.parse(validation.schema),
-        json: JSON.parse(validation.json)
-      })};
+    <script nonce="${nonce}">
+      window.INITIAL_DATA = ${safeData};
     </script>
   `;
     html = html.replace('</body>', `${dataScript}</body>`);
 
+    // Set CSP header with nonce for this specific script
+    res.setHeader(
+      'Content-Security-Policy',
+      `default-src 'self'; script-src 'self' 'nonce-${nonce}' 'unsafe-eval' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'`
+    );
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
   } catch (error) {
